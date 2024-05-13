@@ -1,6 +1,6 @@
 const Product = require("../models/productModel");
 const ErrorHander = require("../utils/errorhander");
-const catchAsyncErrors = require('../middleware/catchAsyncError')
+const catchAsyncErrors = require('../middleware/catchAsyncErrors')
 const ApiFeatures = require('../utils/apifeatures');
 
 //create products
@@ -16,28 +16,42 @@ exports.createProduct = catchAsyncErrors (async (req,res,next)=>{  //here catchA
 });
 
 //get All products
-exports.getAllProducts = catchAsyncErrors (async(req,res)=>{
+exports.getAllProducts = catchAsyncErrors (async(req,res,next)=>{
 
-    const resultPerPage = 8;
+    const resultPerPage = 15;
     const productCount = await Product.countDocuments();
 
-    const apiFeatures = new ApiFeatures(Product.find(),req.query)
+    const apiFeature = new ApiFeatures(Product.find(),req.query)
     .search()
     .filter()
-    .pagination(resultPerPage);
+    
+    let products = await apiFeature.query;
+    let filteredProductsCount = products.length;
 
+    // apiFeature.pagination(resultPerPage);
+    // products = await apiFeature.query;  // video me chal rha mere me error (query is already executed)
+
+
+    const apiFeatureWithPagination = new ApiFeatures(Product.find(), req.query)
+      .search()
+      .filter()
+      .pagination(resultPerPage);
+
+    products = await apiFeatureWithPagination.query;
+    
     console.log("welcome here in productcontroller ");
-
-    const products = await apiFeatures.query;
-
     console.log("products is :-",products);
-    res.status(201).json({
+    console.log("productCount is :-",productCount);
+    console.log("resultPerPage :- ", resultPerPage);
+    res.status(200).json({
         success:true,
         products,
         productCount,
-    })
+        resultPerPage,
+        filteredProductsCount,
+    });
 
-})
+});
 
 // get product details
 exports.getProductDetails = catchAsyncErrors( async(req,res,next)=>{
@@ -52,7 +66,7 @@ exports.getProductDetails = catchAsyncErrors( async(req,res,next)=>{
 
     res.status(200).json({
         success:true,
-        product
+        product,
     });
 });
 

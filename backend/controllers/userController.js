@@ -1,20 +1,27 @@
-
 const ErrorHander = require("../utils/errorhander");
-const catchAsyncErrors = require('../middleware/catchAsyncError')
+const catchAsyncErrors = require('../middleware/catchAsyncErrors')
 const User = require("../models/userModel");
 const sendToken = require("../utils/jwtToken");
 const sendEmail = require("../utils/sendEmail");
 const crypto = require('crypto');
+const cloudinary = require("cloudinary");
 
 //Register a user
 exports.registerUser = catchAsyncErrors(async(req,res,next)=>{
+  
+  const myCloud = await cloudinary.v2.uploader.upload(req.body.avatar, {
+    folder: "avatars",
+    width: 150,
+    crop: "scale",
+  })
+
     const {name,email,password} = req.body;
 
     const user = await User.create({
         name,email,password,
         avatar:{
-            public_id:"this is a sample id",
-            url:"profilepicUrl",
+            public_id:myCloud.public_id,
+            url:myCloud.secure_url,
         },
     });
 
@@ -76,11 +83,10 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 
   await user.save({ validateBeforeSave: false });
 
-  const resetPasswordUrl = `${req.protocol}://${req.get(
-    "host"
-  )}/password/reset/${resetToken}`;
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/api/v1/password/reset/${resetToken}`;
+  // const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
 
-  const message = `Your password reset token is :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email then, please ignore it.`;
+  const message = `Your password reset token is  :- \n\n ${resetPasswordUrl} \n\nIf you have not requested this email then, please ignore it.`;
   console.log(message);
 
   try {
@@ -204,6 +210,32 @@ exports.updateProfile = catchAsyncErrors(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
+  });
+});
+
+// Get all users(admin)
+exports.getAllUser = catchAsyncErrors(async (req, res, next) => {
+  const users = await User.find();
+
+  res.status(200).json({
+    success: true,
+    users,
+  });
+});
+
+// Get single user (admin)
+exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+
+  if (!user) {
+    return next(
+      new ErrorHander(`User does not exist with Id: ${req.params.id}`)
+    );
+  }
+
+  res.status(200).json({
+    success: true,
+    user,
   });
 });
 

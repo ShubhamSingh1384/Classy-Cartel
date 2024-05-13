@@ -14,7 +14,7 @@ router.route("/admin/product/new").post(isAuthenticatedUser,authorizeRoles("admi
 router.route("/admin/product/:id").put(isAuthenticatedUser,authorizeRoles("admin"),updateProduct);
 router.route("/admin/product/:id").delete(isAuthenticatedUser,authorizeRoles("admin"),deleteProduct);
 // router.route("/admin/product/:id").get(getProductDetails);
-// router.route.ge(getProductDetails);
+// router.route.get(getProductDetails);
 // router.route("/product/:id").put(updateProduct).delete(deleteProduct).get(getProductDetails);
 router.route("/product/:id").get(getProductDetails);
 
